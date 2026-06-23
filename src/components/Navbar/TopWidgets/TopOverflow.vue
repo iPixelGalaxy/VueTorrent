@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { useAppStore } from '@/stores'
 
-defineEmits(['resumeTorrents', 'pauseTorrents', 'deleteTorrents', 'openSearchEngine', 'openRssArticles', 'openTorrentCreator', 'openCookiesManager', 'openLogs', 'openSettings'])
+defineEmits([
+  'addTorrents',
+  'resumeTorrents',
+  'pauseTorrents',
+  'deleteTorrents',
+  'openSearchEngine',
+  'openRssArticles',
+  'openTorrentCreator',
+  'openCookiesManager',
+  'openLogs',
+  'openSettings',
+])
 
 const appStore = useAppStore()
 </script>
@@ -12,6 +23,14 @@ const appStore = useAppStore()
       <v-btn icon="mdi-dots-vertical" v-bind="props" />
     </template>
     <v-list>
+      <v-list-item :title="$t('topbar.addTorrents')" @click="$emit('addTorrents')">
+        <template #prepend>
+          <v-icon>mdi-plus</v-icon>
+        </template>
+      </v-list-item>
+
+      <v-divider />
+
       <v-list-item :title="$t('topbar.overflow.resume')" @click="$emit('resumeTorrents')">
         <template #prepend>
           <v-icon>mdi-play</v-icon>

@@ -25,8 +25,8 @@ export const useAddTorrentStore = defineStore(
 
     const pendingTorrentsCount = computed(() => files.value.length + urls.value.split('\n').filter(url => url.trim() !== '').length)
 
-    function pushTorrentToQueue(torrentDescriptor: File | string) {
-      initForm()
+    async function pushTorrentToQueue(torrentDescriptor: File | string) {
+      await initForm()
       if (torrentDescriptor instanceof File) {
         files.value.push(torrentDescriptor)
       } else {
@@ -37,8 +37,9 @@ export const useAddTorrentStore = defineStore(
       }
     }
 
-    function initForm() {
+    async function initForm() {
       if (isFirstInit.value) {
+        await preferenceStore.ensurePreferences()
         isFirstInit.value = false
         resetForm()
       }

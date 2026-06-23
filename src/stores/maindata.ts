@@ -17,6 +17,7 @@ import type { ShareLimitAction } from '@/types/vuetorrent'
 export const useMaindataStore = defineStore('maindata', () => {
   const rid = ref<number>()
   const serverState = shallowRef<Partial<ServerState>>()
+  const wasUnavailable = ref(false)
 
   const appStore = useAppStore()
   const categoryStore = useCategoryStore()
@@ -38,7 +39,7 @@ export const useMaindataStore = defineStore('maindata', () => {
       serverState.value = { ...serverState.value, ...obj }
     }
 
-    navbarStore.pushTimeData()
+    navbarStore.pushTimeData(Math.max(refreshInterval.value * 3, 8000))
     navbarStore.pushDownloadData(serverState.value?.dl_info_speed ?? 0)
     navbarStore.pushUploadData(serverState.value?.up_info_speed ?? 0)
   }
@@ -46,6 +47,10 @@ export const useMaindataStore = defineStore('maindata', () => {
   async function updateMaindata() {
     try {
       const response = await qbit.getMaindata(rid.value)
+      if (wasUnavailable.value) {
+        navbarStore.resetGraph()
+        wasUnavailable.value = false
+      }
       rid.value = response.rid
 
       if (isFullUpdate(response)) {
@@ -71,6 +76,7 @@ export const useMaindataStore = defineStore('maindata', () => {
         await appStore.setAuthStatus(false)
         await vueTorrentStore.redirectToLogin()
       } else {
+        wasUnavailable.value = true
         console.error(error)
       }
     }
@@ -122,6 +128,8 @@ export const useMaindataStore = defineStore('maindata', () => {
       stopMaindataSync()
       rid.value = undefined
       serverState.value = {}
+      wasUnavailable.value = false
+      navbarStore.resetGraph()
     },
   }
 })
