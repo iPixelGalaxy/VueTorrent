@@ -8,6 +8,7 @@ import DnDZone from './components/DnDZone.vue'
 import Navbar from './components/Navbar/Navbar.vue'
 import Sidebar from './components/Navbar/Sidebar.vue'
 import { useBackendSync, useI18nUtils } from './composables'
+import { extractMagnetFromLaunchUrl, openMagnetDialog, openPendingMagnetDialogs, savePendingMagnet } from './composables/MagnetLaunch'
 import { TitleOptions } from './constants/vuetorrent'
 import { formatPercent, formatSpeed } from './helpers'
 import { backend } from './services/backend'
@@ -85,6 +86,15 @@ function addLaunchQueueConsumer() {
     }
   }
   win.launchQueue?.setConsumer(launchParams => {
+    const magnetLink = extractMagnetFromLaunchUrl(launchParams.targetURL)
+    if (magnetLink) {
+      if (appStore.isAuthenticated) {
+        void openMagnetDialog(magnetLink)
+      } else {
+        savePendingMagnet(magnetLink)
+      }
+    }
+
     if (launchParams.files && launchParams.files.length) {
       void Promise.all(launchParams.files.map(async file => addTorrentStore.pushTorrentToQueue(await file.getFile()))).then(() => dialogStore.createDialog(AddTorrentDialog))
     }
@@ -116,6 +126,7 @@ watch(
     if (isAuthenticated) {
       maindataStore.forceMaindataSync()
       await preferencesStore.fetchPreferences()
+      await openPendingMagnetDialogs()
       await logStore.cleanAndFetchLogs()
 
       void backend.ping().then(async ok => {

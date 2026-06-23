@@ -78,6 +78,12 @@ function disableFilter(value: T) {
   arrayRemove(includeValues.value, value)
   arrayRemove(excludeValues.value, value)
 }
+
+function getSelectionStyle(text: string) {
+  return {
+    fontSize: `${Math.max(11.5, Math.min(14, 320 / Math.max(text.length, 1)))}px`,
+  }
+}
 </script>
 
 <template>
@@ -108,10 +114,10 @@ function disableFilter(value: T) {
         <v-divider />
       </template>
       <template #selection="{ item, index }">
-        <span v-if="index === 0 && filterCount === 1" class="text-accent">
+        <span v-if="index === 0 && filterCount === 1" class="filter-selection text-accent" :style="getSelectionStyle(item.title)">
           {{ item.title }}
         </span>
-        <span v-else-if="index === 0" class="text-accent">
+        <span v-else-if="index === 0" class="filter-selection text-accent" :style="getSelectionStyle(t('navbar.side.filters.activeFilter', filterCount))">
           {{ t('navbar.side.filters.activeFilter', filterCount) }}
         </span>
       </template>
@@ -131,3 +137,21 @@ function disableFilter(value: T) {
     </v-autocomplete>
   </v-list-item>
 </template>
+
+<style scoped>
+.filter-selection {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+:deep(.v-field__input),
+:deep(.v-autocomplete__selection) {
+  min-width: 0;
+}
+
+:deep(.v-autocomplete__selection) {
+  max-width: 100%;
+}
+</style>

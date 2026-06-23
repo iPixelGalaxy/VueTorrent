@@ -13,6 +13,10 @@ export function useSearchQuery<T>(
     const searchItems = toValue(items) ?? []
     const query = toValue(searchQuery) ?? ''
 
+    if (!query.trim()) {
+      return postProcess ? postProcess(searchItems) : searchItems
+    }
+
     let res: T[]
 
     if (query.startsWith('/') && query.endsWith('/')) {

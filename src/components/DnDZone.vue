@@ -18,7 +18,7 @@ const dndZoneRef = ref<HTMLDivElement>()
 const queueZoneRef = ref<HTMLDivElement>()
 const downloadZoneRef = ref<HTMLDivElement>()
 const { isOverDropZone: isOverDndZone } = useDropZone(dndZoneRef)
-const { isOverDropZone: isOverQueueZone } = useDropZone(queueZoneRef, { onDrop: onQueueDrop })
+const { isOverDropZone: isOverQueueZone } = useDropZone(queueZoneRef, { onDrop: (files, event) => void onQueueDrop(files, event) })
 const { isOverDropZone: isOverDownloadZone } = useDropZone(downloadZoneRef, { onDrop: (files, event) => void onDownloadDrop(files, event) })
 
 function onDragEnter() {
@@ -70,13 +70,12 @@ function extractPasteData(event: ClipboardEvent): [File[], string[]] {
   return [files, links]
 }
 
-function onQueueDrop(files: File[] | null, event: DragEvent) {
+async function onQueueDrop(files: File[] | null, event: DragEvent) {
   if (!checkDropEvent(event)) return
 
   const [torrentFiles, links] = extractDropData(files, event.dataTransfer!)
 
-  torrentFiles.forEach(addTorrentStore.pushTorrentToQueue)
-  links.forEach(addTorrentStore.pushTorrentToQueue)
+  await Promise.all([...torrentFiles, ...links].map(item => addTorrentStore.pushTorrentToQueue(item)))
 
   if (!dialogStore.hasActiveDialog) {
     dialogStore.createDialog(AddTorrentDialog)
@@ -102,7 +101,7 @@ function onDownloadDrop(files: File[] | null, event: DragEvent) {
   )
 }
 
-function onPaste(event: ClipboardEvent) {
+async function onPaste(event: ClipboardEvent) {
   const targetElement = event.target
   if (targetElement instanceof HTMLInputElement || targetElement instanceof HTMLTextAreaElement) {
     return false
@@ -112,20 +111,23 @@ function onPaste(event: ClipboardEvent) {
 
   const [torrentFiles, links] = extractPasteData(event)
 
-  torrentFiles.forEach(addTorrentStore.pushTorrentToQueue)
-  links.forEach(addTorrentStore.pushTorrentToQueue)
+  await Promise.all([...torrentFiles, ...links].map(item => addTorrentStore.pushTorrentToQueue(item)))
 
   if ((torrentFiles.length || links.length) && !dialogStore.hasActiveDialog) {
     dialogStore.createDialog(AddTorrentDialog)
   }
 }
 
+function handlePaste(event: ClipboardEvent) {
+  void onPaste(event)
+}
+
 onMounted(() => {
-  document.addEventListener('paste', onPaste)
+  document.addEventListener('paste', handlePaste)
   document.addEventListener('dragenter', onDragEnter)
 })
 onUnmounted(() => {
-  document.removeEventListener('paste', onPaste)
+  document.removeEventListener('paste', handlePaste)
   document.removeEventListener('dragenter', onDragEnter)
 })
 </script>

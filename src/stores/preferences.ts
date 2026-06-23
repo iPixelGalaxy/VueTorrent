@@ -8,9 +8,27 @@ export const usePreferenceStore = defineStore(
   'preferences',
   () => {
     const preferences = ref<AppPreferences>()
+    let fetchPromise: Promise<void> | undefined
 
     async function fetchPreferences() {
-      preferences.value = await qbit.getPreferences()
+      if (!fetchPromise) {
+        fetchPromise = qbit
+          .getPreferences()
+          .then(value => {
+            preferences.value = value
+          })
+          .finally(() => {
+            fetchPromise = undefined
+          })
+      }
+
+      await fetchPromise
+    }
+
+    async function ensurePreferences() {
+      if (!preferences.value) {
+        await fetchPreferences()
+      }
     }
 
     async function setPreferences(newPref?: AppPreferencesPayload) {
@@ -20,6 +38,7 @@ export const usePreferenceStore = defineStore(
     return {
       preferences,
       fetchPreferences,
+      ensurePreferences,
       setPreferences,
       $reset: async () => {
         await fetchPreferences()

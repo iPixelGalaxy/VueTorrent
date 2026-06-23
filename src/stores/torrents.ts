@@ -32,14 +32,15 @@ export const useTorrentStore = defineStore(
     const trackerStore = useTrackerStore()
 
     const _torrents = shallowRef<Map<string, RawQbitTorrent>>(new Map())
-    const torrents = computed(() =>
-      Array.from(_torrents.value.entries()).map(([hash, v]) =>
-        buildFromQbit({
-          ...v,
-          hash,
-        })
-      )
-    )
+    const _builtTorrents = shallowRef<Map<string, VtTorrent>>(new Map())
+    const torrents = computed(() => Array.from(_builtTorrents.value.values()))
+
+    function buildTorrent(hash: string, torrent: RawQbitTorrent) {
+      return buildFromQbit({
+        ...torrent,
+        hash,
+      })
+    }
 
     const filterType = ref(FilterType.CONJUNCTIVE)
 
@@ -213,20 +214,29 @@ export const useTorrentStore = defineStore(
     function syncFromMaindata(fullUpdate: boolean, entries: [string, Partial<RawQbitTorrent>][], removed?: string[]) {
       if (fullUpdate) {
         _torrents.value = new Map(entries as [string, RawQbitTorrent][])
+        _builtTorrents.value = new Map(entries.map(([hash, torrent]) => [hash, buildTorrent(hash, torrent as RawQbitTorrent)]))
         return
       }
 
       for (const [hash, qbitTorrent] of entries) {
         const torrent = _torrents.value.get(hash)
         if (torrent) {
-          _torrents.value.set(hash, { ...torrent, ...qbitTorrent })
+          const updatedTorrent = { ...torrent, ...qbitTorrent }
+          _torrents.value.set(hash, updatedTorrent)
+          _builtTorrents.value.set(hash, buildTorrent(hash, updatedTorrent))
         } else {
-          _torrents.value.set(hash, qbitTorrent as RawQbitTorrent)
+          const newTorrent = qbitTorrent as RawQbitTorrent
+          _torrents.value.set(hash, newTorrent)
+          _builtTorrents.value.set(hash, buildTorrent(hash, newTorrent))
         }
       }
 
-      removed?.forEach(t => _torrents.value.delete(t))
+      removed?.forEach(t => {
+        _torrents.value.delete(t)
+        _builtTorrents.value.delete(t)
+      })
       triggerRef(_torrents)
+      triggerRef(_builtTorrents)
     }
 
     async function setTorrentCategory(hashes: string[], category: string) {
@@ -390,7 +400,9 @@ export const useTorrentStore = defineStore(
       exportTorrent,
       $reset: () => {
         _torrents.value.clear()
+        _builtTorrents.value.clear()
         triggerRef(_torrents)
+        triggerRef(_builtTorrents)
         sortCriterias.value = [{ value: 'added_on', reverse: true }]
 
         filterType.value = FilterType.CONJUNCTIVE

@@ -3,6 +3,12 @@ import { computed, ref } from 'vue'
 import { useDisplay } from 'vuetify'
 
 const GRAPH_SIZE = 15
+const GRAPH_INTERVAL_MS = 1000
+const GRAPH_STALE_MS = 8000
+
+function createTimeData(now = new Date().getTime()) {
+  return Array.from({ length: GRAPH_SIZE }, (_, index) => now - (GRAPH_SIZE - index - 1) * GRAPH_INTERVAL_MS)
+}
 
 export const useNavbarStore = defineStore(
   'navbar',
@@ -11,16 +17,23 @@ export const useNavbarStore = defineStore(
 
     const isDrawerOpen = ref(!mobile.value)
 
-    const _timeData = ref<number[]>(new Array(GRAPH_SIZE).fill(new Date().getTime()))
+    const _timeData = ref<number[]>(createTimeData())
     const _downloadData = ref<number[]>(new Array(GRAPH_SIZE).fill(0))
     const _uploadData = ref<number[]>(new Array(GRAPH_SIZE).fill(0))
 
     const downloadData = computed(() => _timeData.value.map((e, i) => [e, _downloadData.value[i]]))
     const uploadData = computed(() => _timeData.value.map((e, i) => [e, _uploadData.value[i]]))
 
-    function pushTimeData() {
+    function pushTimeData(maxGapMs = GRAPH_STALE_MS) {
+      const now = new Date().getTime()
+      const previousTime = _timeData.value.at(-1)
+
+      if (previousTime && now - previousTime > maxGapMs) {
+        resetGraph(now)
+      }
+
       _timeData.value.shift()
-      _timeData.value.push(new Date().getTime())
+      _timeData.value.push(now)
     }
 
     function pushDownloadData(data?: number) {
@@ -33,6 +46,12 @@ export const useNavbarStore = defineStore(
       _uploadData.value.push(data ?? 0)
     }
 
+    function resetGraph(now?: number) {
+      _timeData.value = createTimeData(now)
+      _downloadData.value = new Array(GRAPH_SIZE).fill(0)
+      _uploadData.value = new Array(GRAPH_SIZE).fill(0)
+    }
+
     return {
       isDrawerOpen,
       _timeData,
@@ -43,20 +62,16 @@ export const useNavbarStore = defineStore(
       pushTimeData,
       pushDownloadData,
       pushUploadData,
+      resetGraph,
       $reset: () => {
-        _timeData.value = new Array(GRAPH_SIZE).fill(new Date().getTime())
-        _downloadData.value = new Array(GRAPH_SIZE).fill(0)
-        _uploadData.value = new Array(GRAPH_SIZE).fill(0)
+        resetGraph()
       },
     }
   },
   {
     persistence: {
       enabled: true,
-      storageItems: [
-        { storage: sessionStorage, excludePaths: ['isDrawerOpen'] },
-        { storage: localStorage, includePaths: ['isDrawerOpen'] },
-      ],
+      storageItems: [{ storage: localStorage, includePaths: ['isDrawerOpen'] }],
     },
   }
 )

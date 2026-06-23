@@ -83,16 +83,9 @@ function openSettings() {
 </script>
 
 <template>
-  <v-tooltip :text="$t('topbar.addTorrents')" location="bottom">
-    <template #activator="{ props }">
-      <v-btn icon="mdi-plus" v-bind="props" @click="openAddTorrentDialog" />
-    </template>
-  </v-tooltip>
-
-  <v-divider inset vertical />
-
   <TopOverflow
-    v-if="$vuetify.display.smAndDown"
+    v-if="$vuetify.display.lgAndDown"
+    @add-torrents="openAddTorrentDialog"
     @delete-torrents="deleteTorrents"
     @open-logs="openLogs"
     @open-search-engine="openSearchEngine"
@@ -102,17 +95,26 @@ function openSettings() {
     @open-cookies-manager="openCookiesManager"
     @pause-torrents="pauseTorrents"
     @resume-torrents="resumeTorrents" />
-  <TopActions
-    v-else
-    @delete-torrents="deleteTorrents"
-    @open-logs="openLogs"
-    @open-search-engine="openSearchEngine"
-    @open-settings="openSettings"
-    @open-rss-articles="openRssArticles"
-    @open-torrent-creator="openTorrentCreator"
-    @open-cookies-manager="openCookiesManager"
-    @pause-torrents="pauseTorrents"
-    @resume-torrents="resumeTorrents" />
+  <template v-else>
+    <v-tooltip :text="$t('topbar.addTorrents')" location="bottom">
+      <template #activator="{ props }">
+        <v-btn icon="mdi-plus" v-bind="props" @click="openAddTorrentDialog" />
+      </template>
+    </v-tooltip>
+
+    <v-divider inset vertical />
+
+    <TopActions
+      @delete-torrents="deleteTorrents"
+      @open-logs="openLogs"
+      @open-search-engine="openSearchEngine"
+      @open-settings="openSettings"
+      @open-rss-articles="openRssArticles"
+      @open-torrent-creator="openTorrentCreator"
+      @open-cookies-manager="openCookiesManager"
+      @pause-torrents="pauseTorrents"
+      @resume-torrents="resumeTorrents" />
+  </template>
 </template>
 
 <style scoped></style>
