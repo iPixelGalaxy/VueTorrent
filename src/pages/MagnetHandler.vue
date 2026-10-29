@@ -12,7 +12,7 @@ onBeforeMount(async () => {
   const magnetLink = extractMagnetLink(route.params.url as string)
   if (magnetLink) {
     if (appStore.isAuthenticated) {
-      await openMagnetDialog(magnetLink)
+      openMagnetDialog(magnetLink)
     } else {
       savePendingMagnet(magnetLink)
     }

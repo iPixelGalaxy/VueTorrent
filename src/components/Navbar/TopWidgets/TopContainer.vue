@@ -17,10 +17,6 @@ const torrentStore = useTorrentStore()
 const isOnTorrentDetail = computed(() => route.name === 'torrentDetail')
 const hashes = computed(() => (isOnTorrentDetail.value ? [route.params.hash as string] : dashboardStore.selectedTorrents))
 
-function openAddTorrentDialog() {
-  dialogStore.createDialog(defineAsyncComponent(() => import('@/components/Dialogs/AddTorrentDialog.vue')))
-}
-
 async function resumeTorrents() {
   if (!hashes.value.length) {
     dialogStore.confirmAction({
@@ -86,7 +82,7 @@ function openSettings() {
 <template>
   <TopOverflow
     v-if="$vuetify.display.lgAndDown"
-    @add-torrents="openAddTorrentDialog"
+    @add-torrents="dialogStore.initAndOpenAddTorrentDialog"
     @delete-torrents="deleteTorrents"
     @open-logs="openLogs"
     @open-search-engine="openSearchEngine"
@@ -99,7 +95,7 @@ function openSettings() {
   <template v-else>
     <v-tooltip :text="$t('topbar.addTorrents')" location="bottom">
       <template #activator="{ props }">
-        <v-btn icon="mdi-plus" v-bind="props" @click="openAddTorrentDialog" />
+        <v-btn icon="mdi-plus" v-bind="props" @click="dialogStore.initAndOpenAddTorrentDialog" />
       </template>
     </v-tooltip>
 

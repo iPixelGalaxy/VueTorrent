@@ -97,8 +97,8 @@ function close() {
   isOpened.value = false
 }
 
-onBeforeMount(async () => {
-  await addTorrentStore.initForm()
+onBeforeMount(() => {
+  addTorrentStore.tryInitForm()
 })
 </script>
 

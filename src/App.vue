@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { defineAsyncComponent, onBeforeMount, onMounted, watch, watchEffect, onBeforeUnmount } from 'vue'
+import { onBeforeMount, onMounted, watch, watchEffect, onBeforeUnmount, h } from 'vue'
 import { toast } from 'vue3-toastify'
 import AddPanel from './components/AddPanel.vue'
 import DnDZone from './components/DnDZone.vue'
 import Navbar from './components/Navbar/Navbar.vue'
 import Sidebar from './components/Navbar/Sidebar.vue'
-import { useBackendSync, useI18nUtils } from './composables'
+import { useBackendSync, useI18nUtils, useNumberFormatter } from './composables'
 import { extractMagnetFromLaunchUrl, openMagnetDialog, openPendingMagnetDialogs, savePendingMagnet } from './composables/MagnetLaunch'
 import { TitleOptions } from './constants/vuetorrent'
-import { formatPercent, formatSpeed } from './helpers'
+import { formatPercent } from './helpers'
 import { backend } from './services/backend'
 import {
   useAddTorrentStore,
@@ -26,20 +26,22 @@ import {
 } from './stores'
 
 const { t } = useI18nUtils()
+const { formatSpeed } = useNumberFormatter()
+
 const addTorrentStore = useAddTorrentStore()
 const appStore = useAppStore()
 const dashboardStore = useDashboardStore()
 const dialogStore = useDialogStore()
+const { routerDomKey } = storeToRefs(useGlobalStore())
 const logStore = useLogStore()
-const sidebarStore = useSidebarStore()
 const maindataStore = useMaindataStore()
 const { serverState } = storeToRefs(maindataStore)
+const sidebarStore = useSidebarStore()
 const torrentStore = useTorrentStore()
 const { torrents } = storeToRefs(torrentStore)
 const preferencesStore = usePreferenceStore()
-const { routerDomKey } = storeToRefs(useGlobalStore())
 const vuetorrentStore = useVueTorrentStore()
-const { language, uiTitleCustom, uiTitleType, useBitSpeed } = storeToRefs(vuetorrentStore)
+const { language, uiTitleCustom, uiTitleType } = storeToRefs(vuetorrentStore)
 
 const backendSyncObjects = [
   useBackendSync(dashboardStore, 'vuetorrent_dashboard', {
@@ -67,6 +69,21 @@ async function checkAuthentication() {
   await authStatus.finally(() => clearTimeout(timer))
 }
 
+function handleNetworkError() {
+  if (toast.isActive('network-unknown-error')) return
+
+  toast.error(
+    () =>
+      h('div', { class: 'd-flex flex-column align-center ga-2' }, [h('div', t('toast.network_error.message')), h('button', { type: 'button' }, t('toast.network_error.action'))]),
+    {
+      onClick: () => window.location.reload(),
+      autoClose: false,
+      closeOnClick: false,
+      toastId: 'network-unknown-error',
+    }
+  )
+}
+
 function blockContextMenu(event: Event) {
   if (!event.target) return
 
@@ -88,16 +105,14 @@ function addLaunchQueueConsumer() {
     const magnetLink = extractMagnetFromLaunchUrl(launchParams.targetURL)
     if (magnetLink) {
       if (appStore.isAuthenticated) {
-        void openMagnetDialog(magnetLink)
+        openMagnetDialog(magnetLink)
       } else {
         savePendingMagnet(magnetLink)
       }
     }
 
     if (launchParams.files && launchParams.files.length) {
-      void Promise.all(launchParams.files.map(async file => addTorrentStore.pushTorrentToQueue(await file.getFile()))).then(() =>
-        dialogStore.createDialog(defineAsyncComponent(() => import('./components/Dialogs/AddTorrentDialog.vue')))
-      )
+      void Promise.all(launchParams.files.map(async file => addTorrentStore.pushTorrentToQueue(await file.getFile()))).then(dialogStore.initAndOpenAddTorrentDialog)
     }
   })
 }
@@ -114,10 +129,12 @@ onMounted(() => {
   // Global error handler flag
   sessionStorage.setItem('vuetorrent_mounted', 'true')
 
+  window.addEventListener('vuetorrent:network-unknown-error', handleNetworkError)
   void checkAuthentication()
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('vuetorrent:network-unknown-error', handleNetworkError)
   document.removeEventListener('contextmenu', blockContextMenu)
 })
 
@@ -127,7 +144,7 @@ watch(
     if (isAuthenticated) {
       maindataStore.startMaindataSync()
       await preferencesStore.fetchPreferences()
-      await openPendingMagnetDialogs()
+      openPendingMagnetDialogs()
       await logStore.cleanAndFetchLogs()
 
       void backend.ping().then(async ok => {
@@ -153,16 +170,16 @@ watchEffect(() => {
   const mode = uiTitleType.value
   switch (mode) {
     case TitleOptions.GLOBAL_SPEED: {
-      const dl_speed = formatSpeed(serverState.value?.dl_info_speed ?? 0, useBitSpeed.value)
-      const ul_speed = formatSpeed(serverState.value?.up_info_speed ?? 0, useBitSpeed.value)
+      const dl_speed = formatSpeed({ speed: serverState.value?.dl_info_speed })
+      const ul_speed = formatSpeed({ speed: serverState.value?.up_info_speed })
       document.title = `[D: ${dl_speed}, U: ${ul_speed}] ${baseName}`
       break
     }
     case TitleOptions.FIRST_TORRENT_STATUS: {
       const torrent = torrents.value.at(0)
       if (torrent) {
-        const dl_speed = formatSpeed(torrent.dlspeed, useBitSpeed.value)
-        const ul_speed = formatSpeed(torrent.upspeed, useBitSpeed.value)
+        const dl_speed = formatSpeed({ speed: torrent.dlspeed })
+        const ul_speed = formatSpeed({ speed: torrent.upspeed })
         const progress = formatPercent(torrent.progress)
         document.title = `[D: ${dl_speed}, U: ${ul_speed}, ${progress}] ${baseName}`
       } else {

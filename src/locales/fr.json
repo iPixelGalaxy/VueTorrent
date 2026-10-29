@@ -736,10 +736,6 @@
         "value": "Aucune règle RSS enregistrée"
       },
       "title": "Règles RSS"
-    },
-    "toggle": {
-      "feeds": "Afficher les flux",
-      "rules": "Afficher les règles"
     }
   },
   "searchEngine": {
@@ -1622,6 +1618,10 @@
     }
   },
   "units": {
+    "bit_per_second": "bps",
+    "byte": "octet | octets",
+    "byte_per_second": "o/s",
+    "byte_short": "o",
     "minutes": "minute | minute | minutes",
     "seconds": "seconde | seconde | secondes"
   }

@@ -1,4 +1,3 @@
-import AddTorrentDialog from '@/components/Dialogs/AddTorrentDialog.vue'
 import { useAddTorrentStore, useDialogStore } from '@/stores'
 
 const PENDING_MAGNETS_KEY = 'vuetorrent_pending_magnets'
@@ -50,22 +49,20 @@ export function savePendingMagnet(magnetLink: string) {
   sessionStorage.setItem(PENDING_MAGNETS_KEY, JSON.stringify(pending))
 }
 
-export async function openMagnetDialog(magnetLink: string) {
+export function openMagnetDialog(magnetLink: string) {
   const addTorrentStore = useAddTorrentStore()
   const dialogStore = useDialogStore()
 
-  await addTorrentStore.pushTorrentToQueue(magnetLink)
-  if (!dialogStore.hasActiveDialog) {
-    dialogStore.createDialog(AddTorrentDialog)
-  }
+  addTorrentStore.pushTorrentToQueue(magnetLink)
+  dialogStore.initAndOpenAddTorrentDialog()
 }
 
-export async function openPendingMagnetDialogs() {
+export function openPendingMagnetDialogs() {
   const pending = getPendingMagnets()
   if (!pending.length) return
 
   sessionStorage.removeItem(PENDING_MAGNETS_KEY)
   for (const magnetLink of pending) {
-    await openMagnetDialog(magnetLink)
+    openMagnetDialog(magnetLink)
   }
 }

@@ -3,12 +3,12 @@ import { ApexOptions } from 'apexcharts'
 import { computed } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import { useTheme } from 'vuetify'
-import { useI18nUtils } from '@/composables'
-import { formatSpeed } from '@/helpers'
+import { useI18nUtils, useNumberFormatter } from '@/composables'
 import dayjs from '@/plugins/dayjs'
 import { useMaindataStore, useNavbarStore, useVueTorrentStore } from '@/stores'
 
 const { t } = useI18nUtils()
+const { formatSpeed } = useNumberFormatter()
 const theme = useTheme()
 const maindataStore = useMaindataStore()
 const navbarStore = useNavbarStore()
@@ -25,7 +25,7 @@ function tooltipRow(color: string, name: string, value: number | undefined) {
     <div class="apexcharts-tooltip-text">
       <div class="apexcharts-tooltip-y-group">
         <span class="apexcharts-tooltip-text-y-label">${name}: </span>
-        <span class="apexcharts-tooltip-text-y-value">${formatSpeed(value ?? 0, vuetorrentStore.useBitSpeed)}</span>
+        <span class="apexcharts-tooltip-text-y-value">${formatSpeed({ speed: value ?? 0 })}</span>
       </div>
     </div>
   </div>`

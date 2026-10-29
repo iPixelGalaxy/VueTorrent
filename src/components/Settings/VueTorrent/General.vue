@@ -53,6 +53,12 @@ const darkVariants = readonly([
   { title: t('constants.themes.dark.oled'), value: DarkOled.id }
 ])
 
+const defaultNumericSeparators = [
+  { title: 'Space (" ")', value: ' ' },
+  { title: 'Dot (.)', value: '.' },
+  { title: 'Comma (,)', value: ',' },
+  { title: 'Apostrophe (\')', value: '\'' }
+]
 
 const paginationSizes = ref([{ title: t('settings.vuetorrent.general.paginationSize.infinite_scroll'), value: -1 }, 5, 15, 30, 50, 100, 250, 500])
 
@@ -186,6 +192,10 @@ function openDurationFormatHelp() {
         </v-col>
 
         <v-col cols="12" sm="6">
+          <v-checkbox v-model="vueTorrentStore.hideZeroStateEta" hide-details density="compact" :label="t('settings.vuetorrent.general.hideZeroStateEta')" />
+        </v-col>
+
+        <v-col cols="12" sm="6">
           <v-checkbox v-model="vueTorrentStore.displayGraphLimits" hide-details density="compact" :label="t('settings.vuetorrent.general.displayGraphLimits')" />
         </v-col>
         <v-col cols="12" sm="6">
@@ -211,6 +221,13 @@ function openDurationFormatHelp() {
         </v-col>
         <v-col cols="12" sm="6">
           <v-checkbox v-model="vueTorrentStore.reduceMotion" hide-details density="compact" :label="t('settings.vuetorrent.general.reduceMotion')" />
+        </v-col>
+
+        <v-col cols="12" sm="6">
+          <v-checkbox v-model="vueTorrentStore.enableRawValueTooltips" hide-details density="compact" :label="t('settings.vuetorrent.general.enableRawValueTooltips')" />
+        </v-col>
+        <v-col cols="12" sm="6">
+          <v-combobox v-model="vueTorrentStore.thousandSeparator" :items="defaultNumericSeparators" hide-details :return-object="false" density="compact" :label="t('settings.vuetorrent.general.thousandSeparator')" />
         </v-col>
       </v-row>
     </v-list-item>
